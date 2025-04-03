@@ -1,8 +1,6 @@
 networks:
   neo4j_net:
     driver: bridge
-  temporal_net:
-    driver: bridge
 
 services:
   neo4j:
@@ -57,138 +55,30 @@ services:
     # Set up the user
     # user: ${USER_ID}:${GROUP_ID}
 
-  # Local embedding models service: https://github.com/michaelfeil/infinity
-  infinity:
-    container_name: voice-agent-infinity
-    image: michaelf34/infinity:latest
-    ports:
-      - "7997:7997"
-    volumes:
-      - ./mounts/infinity/cache:/app/.cache
-
-    # SentenceTransformer models are supported
-    command:
-      [
-        "v2",
-        "--model-id",
-        "Alibaba-NLP/gte-large-en-v1.5",
-        "--model-id",
-        "mixedbread-ai/mxbai-rerank-large-v1",
-        "--port",
-        "7997",
-      ]
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [gpu]
-
-  ## TODO DELETE
-  # workflows:
-  #   container_name: voice-agent-workflows-worker
-  #   build:
-  #     context: .
-  #     dockerfile: ./packages/workflows/Dockerfile.dev
-  #   env_file:
-  #     - .env
+  # # Local embedding models service: https://github.com/michaelfeil/infinity
+  # infinity:
+  #   container_name: voice-agent-infinity
+  #   image: michaelf34/infinity:latest
+  #   ports:
+  #     - "7997:7997"
   #   volumes:
-  #     - ./:/app
-  #     - /app/node_modules
-  #     - /app/packages/workflows/node_modules
-  #   networks:
-  #     - neo4j_net
-  #     - temporal_net
-  #   depends_on:
-  #     - temporal
-  #   environment:
-  #     - TEMPORAL_HOST=temporal:7233
-  #     - OPENAI_API_KEY
-  #     - NEO4J_URI
-  #     - NEO4J_USER
-  #     - NEO4J_PASSWORD
-  #   restart: on-failure
+  #     - ./mounts/infinity/cache:/app/.cache
 
-  ### Temporal services
-  elasticsearch:
-    container_name: voice-agent-temporal-elasticsearch
-    environment:
-      - cluster.routing.allocation.disk.threshold_enabled=true
-      - cluster.routing.allocation.disk.watermark.low=512mb
-      - cluster.routing.allocation.disk.watermark.high=256mb
-      - cluster.routing.allocation.disk.watermark.flood_stage=128mb
-      - discovery.type=single-node
-      - ES_JAVA_OPTS=-Xms256m -Xmx256m
-      - xpack.security.enabled=false
-    image: elasticsearch:7.16.2
-    networks:
-      - temporal_net
-    expose:
-      - 9200
-    volumes:
-      - /var/lib/elasticsearch/data
-    restart: on-failure
-  postgresql:
-    container_name: voice-agent-temporal-postgresql
-    environment:
-      POSTGRES_PASSWORD: temporal
-      POSTGRES_USER: temporal
-    image: postgres:13
-    networks:
-      - temporal_net
-    expose:
-      - 5432
-    volumes:
-      - /var/lib/postgresql/data
-    restart: on-failure
-  temporal:
-    container_name: voice-agent-temporal
-    depends_on:
-      - postgresql
-      - elasticsearch
-    environment:
-      - DB=postgres12
-      - DB_PORT=5432
-      - POSTGRES_USER=temporal
-      - POSTGRES_PWD=temporal
-      - POSTGRES_SEEDS=postgresql
-      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
-      - ENABLE_ES=true
-      - ES_SEEDS=elasticsearch
-      - ES_VERSION=v7
-    image: temporalio/auto-setup:1.24
-    networks:
-      - temporal_net
-    ports:
-      - 7233:7233
-    labels:
-      kompose.volume.type: configMap
-    volumes:
-      - ./packages/workflows/dynamicconfig:/etc/temporal/config/dynamicconfig
-    restart: on-failure
-  temporal-admin-tools:
-    container_name: voice-agent-temporal-admin-tools
-    depends_on:
-      - temporal
-    environment:
-      - TEMPORAL_ADDRESS=temporal:7233
-      - TEMPORAL_CLI_ADDRESS=temporal:7233
-    image: temporalio/admin-tools:1.24
-    networks:
-      - temporal_net
-    stdin_open: true
-    tty: true
-  temporal-ui:
-    container_name: voice-agent-temporal-ui
-    depends_on:
-      - temporal
-    environment:
-      - TEMPORAL_ADDRESS=temporal:7233
-      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
-    image: temporalio/ui:2.26.2
-    networks:
-      - temporal_net
-    ports:
-      - 8080:8080
-    restart: on-failure
+  #   # SentenceTransformer models are supported
+  #   command:
+  #     [
+  #       "v2",
+  #       "--model-id",
+  #       "Alibaba-NLP/gte-large-en-v1.5",
+  #       "--model-id",
+  #       "mixedbread-ai/mxbai-rerank-large-v1",
+  #       "--port",
+  #       "7997",
+  #     ]
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: all
+  #             capabilities: [gpu]
