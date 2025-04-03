@@ -1,6 +1,7 @@
 import express from "express";
 import https from "https";
 import twilio from "twilio";
+import { ULTRAVOX_SYSTEM_PROMPT } from "./prompts";
 
 const app = express();
 const port = 3000;
@@ -9,17 +10,14 @@ const port = 3000;
 const ULTRAVOX_API_KEY = process.env.ULTRAVOX_API_KEY;
 const ULTRAVOX_API_URL = "https://api.ultravox.ai/api/calls";
 
-// Ultravox configuration
-const SYSTEM_PROMPT =
-  "Your name is Steve. You are receiving a phone call. Ask them their name and see how they are doing.";
-
 const ULTRAVOX_CALL_CONFIG = {
-  systemPrompt: SYSTEM_PROMPT,
+  systemPrompt: ULTRAVOX_SYSTEM_PROMPT,
   model: "fixie-ai/ultravox",
-  voice: "Mark",
+  voice: "David-English-British",
   temperature: 0.3,
   firstSpeaker: "FIRST_SPEAKER_AGENT",
   medium: { twilio: {} },
+  languageHint: "en-US",
 };
 
 // Create Ultravox call and get join URL

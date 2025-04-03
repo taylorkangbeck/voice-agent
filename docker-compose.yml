@@ -1,0 +1,194 @@
+networks:
+  neo4j_net:
+    driver: bridge
+  temporal_net:
+    driver: bridge
+
+services:
+  neo4j:
+    container_name: voice-agent-neo4j
+    # Docker image to be used
+    image: neo4j:community
+    hostname: neo4j
+
+    # Service-level network, which specifies the networks, from the list of the top-level networks (in this case only neo4j_net), that the server will connect to.
+    # Adds a network alias (used in neo4j.conf when configuring the discovery members)
+    networks:
+      neo4j_net:
+        aliases:
+          - neo4j-network
+
+    # The ports that will be accessible from outside the container - HTTP (7474) and Bolt (7687).
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+
+    # Uncomment the volumes to be mounted to make them accessible from outside the container.
+    volumes:
+      # - ./config/neo4j.conf:/conf/neo4j.conf # This is the main configuration file.
+      - ./mounts/neo4j/data:/data
+      - ./mounts/neo4j/logs:/logs
+      - ./mounts/neo4j/conf:/conf
+      # - ./import/server1:/import
+      #- ./metrics/server1:/metrics
+      #- ./licenses/server1:/licenses
+      #- ./ssl/server1:/ssl
+
+    # Passes the following environment variables to the container
+    environment:
+      # - NEO4J_ACCEPT_LICENSE_AGREEMENT
+      - NEO4J_AUTH
+      # - EXTENDED_CONF
+      # - NEO4J_EDITION
+      # - NEO4J_initial_server_mode__constraint=PRIMARY
+      - "NEO4J_dbms_security_procedures_unrestricted=apoc.*"
+      - "NEO4J_dbms.usage_report.enabled=false"
+
+    # Simple check testing whether the port 7474 is opened.
+    # If so, the instance running inside the container is considered as "healthy".
+    # This status can be checked using the "docker ps" command.
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1",
+        ]
+
+    # Set up the user
+    # user: ${USER_ID}:${GROUP_ID}
+
+  # Local embedding models service: https://github.com/michaelfeil/infinity
+  infinity:
+    container_name: voice-agent-infinity
+    image: michaelf34/infinity:latest
+    ports:
+      - "7997:7997"
+    volumes:
+      - ./mounts/infinity/cache:/app/.cache
+
+    # SentenceTransformer models are supported
+    command:
+      [
+        "v2",
+        "--model-id",
+        "Alibaba-NLP/gte-large-en-v1.5",
+        "--model-id",
+        "mixedbread-ai/mxbai-rerank-large-v1",
+        "--port",
+        "7997",
+      ]
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  ## TODO DELETE
+  # workflows:
+  #   container_name: voice-agent-workflows-worker
+  #   build:
+  #     context: .
+  #     dockerfile: ./packages/workflows/Dockerfile.dev
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - ./:/app
+  #     - /app/node_modules
+  #     - /app/packages/workflows/node_modules
+  #   networks:
+  #     - neo4j_net
+  #     - temporal_net
+  #   depends_on:
+  #     - temporal
+  #   environment:
+  #     - TEMPORAL_HOST=temporal:7233
+  #     - OPENAI_API_KEY
+  #     - NEO4J_URI
+  #     - NEO4J_USER
+  #     - NEO4J_PASSWORD
+  #   restart: on-failure
+
+  ### Temporal services
+  elasticsearch:
+    container_name: voice-agent-temporal-elasticsearch
+    environment:
+      - cluster.routing.allocation.disk.threshold_enabled=true
+      - cluster.routing.allocation.disk.watermark.low=512mb
+      - cluster.routing.allocation.disk.watermark.high=256mb
+      - cluster.routing.allocation.disk.watermark.flood_stage=128mb
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+      - xpack.security.enabled=false
+    image: elasticsearch:7.16.2
+    networks:
+      - temporal_net
+    expose:
+      - 9200
+    volumes:
+      - /var/lib/elasticsearch/data
+    restart: on-failure
+  postgresql:
+    container_name: voice-agent-temporal-postgresql
+    environment:
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_USER: temporal
+    image: postgres:13
+    networks:
+      - temporal_net
+    expose:
+      - 5432
+    volumes:
+      - /var/lib/postgresql/data
+    restart: on-failure
+  temporal:
+    container_name: voice-agent-temporal
+    depends_on:
+      - postgresql
+      - elasticsearch
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=postgresql
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+      - ENABLE_ES=true
+      - ES_SEEDS=elasticsearch
+      - ES_VERSION=v7
+    image: temporalio/auto-setup:1.24
+    networks:
+      - temporal_net
+    ports:
+      - 7233:7233
+    labels:
+      kompose.volume.type: configMap
+    volumes:
+      - ./packages/workflows/dynamicconfig:/etc/temporal/config/dynamicconfig
+    restart: on-failure
+  temporal-admin-tools:
+    container_name: voice-agent-temporal-admin-tools
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CLI_ADDRESS=temporal:7233
+    image: temporalio/admin-tools:1.24
+    networks:
+      - temporal_net
+    stdin_open: true
+    tty: true
+  temporal-ui:
+    container_name: voice-agent-temporal-ui
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    image: temporalio/ui:2.26.2
+    networks:
+      - temporal_net
+    ports:
+      - 8080:8080
+    restart: on-failure
