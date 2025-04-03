@@ -10,7 +10,7 @@
     "dev:build": "tsc -w",
     "dev:run": "nodemon -r dotenv/config build/index.js",
     "dev": "concurrently npm:dev:*",
-    "test": "jest"
+    "test": "dotenvx run -f ../../.env -- jest"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +26,7 @@
     "dotenv": "^16.4.1",
     "express": "^4.19.2",
     "express-ws": "^5.0.2",
+    "neo4j-driver": "^5.28.1",
     "twilio": "^5.5.1"
   },
   "devDependencies": {

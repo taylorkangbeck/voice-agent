@@ -4,7 +4,7 @@ tunnel:
 	ngrok http --domain=ladybird-winning-shiner.ngrok-free.app http://localhost:3000	
 
 dev:start
-	cd ./packages/api-server && dotenvx run -- npm run dev
+	cd ./packages/api-server && dotenvx run -f ../../.env -- npm run dev
 	
 build: ## Build docker image
 	dotenvx run -- docker compose build
