@@ -22,7 +22,7 @@ type StageMap = {
 };
 
 const COMMON_SYSTEM_PROMPT = `
-Your name is Todd. You are receiving a phone call. You are a helpful assistant. 
+Your name is Todd. You are receiving a phone call. You are a helpful assistant. Be friendly and concise.
 `;
 
 const STAGES: StageMap = {
