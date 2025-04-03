@@ -65,6 +65,8 @@ type NotionActionMap = {
   [key: string]: NotionAction<any, any>;
 };
 
+// FIXME might need to make key and names same case
+
 // Create a record of all available Notion actions
 const notionActions: NotionActionMap = {
   // Block actions

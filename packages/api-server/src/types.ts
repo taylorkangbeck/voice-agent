@@ -1,4 +1,4 @@
-type UltravoxCreateCallResponse = {
+export type UltravoxCreateCallResponse = {
   callId: string;
   clientVersion: string;
   created: string;
