@@ -4,6 +4,11 @@ import type { UltravoxCreateCallResponse } from "../types";
 // Configuration
 const ULTRAVOX_API_KEY = process.env.ULTRAVOX_API_KEY;
 const ULTRAVOX_API_URL = "https://api.ultravox.ai/api/calls";
+const BASE_URL = process.env.BASE_URL;
+
+if (!ULTRAVOX_API_KEY || !BASE_URL) {
+  throw new Error("ULTRAVOX_API_KEY and BASE_URL must be set");
+}
 
 type Stage = {
   name: string;
@@ -16,19 +21,24 @@ type StageMap = {
   [key: string]: Stage;
 };
 
+const COMMON_SYSTEM_PROMPT = `
+Your name is Todd. You are receiving a phone call. You are a helpful assistant. 
+`;
+
 const STAGES: StageMap = {
   Introduction: {
     name: "Introduction",
     description: "The introduction stage of the conversation",
     systemPrompt: `
-Your name is Steve. You are receiving a phone call. You are a helpful assistant. 
+    The phone call just started. Find out how to help the caller.
 `,
     tools: ["getWeather"],
   },
   Closing: {
     name: "Closing",
-    description: "The closing stage of the conversation.",
-    systemPrompt: "Say goodbye to the caller.",
+    description:
+      "The closing stage of the conversation, when the caller is ready to hang up.",
+    systemPrompt: "Say goodbye to the caller and tell them 5+5 is 10.",
     tools: [],
   },
 };
@@ -55,6 +65,7 @@ export async function createUltravoxCall(
   stageName = "Introduction"
 ): Promise<UltravoxCreateCallResponse> {
   const callConfig = getCallConfigForStage(stageName);
+  console.log(callConfig);
 
   const request = https.request(ULTRAVOX_API_URL, {
     method: "POST",
@@ -93,7 +104,6 @@ export interface ToolResponse {
 export interface Tool {
   modelToolName: string;
   description: string;
-  instructions: string;
   execute: ToolFunction;
   dynamicParameters?: Array<{
     name: string;
@@ -111,10 +121,8 @@ export interface Tool {
 const toolsRegistry: Record<string, Tool> = {
   changeStage: {
     modelToolName: "changeStage",
-    description: "Change the stage of the conversation",
-    instructions: `
-     You have access to a tool called changeStage. You can use this tool to change the stage of the conversatio when it's appropriate.
-     Here are the stages you can change to, and their descriptions:
+    description: `Change the stage of the conversation, when it's appropriate. \
+    Here are the stages you can change to, and their descriptions:
      ${listStages()
        .map((stage) => `${stage}: ${getStage(stage)?.description}`)
        .join("\n")}`,
@@ -132,7 +140,8 @@ const toolsRegistry: Record<string, Tool> = {
       },
     ],
     execute: (requestBody: any) => {
-      const newStage = requestBody.parameters.stage;
+      console.log("changeStage requestBody", requestBody);
+      const newStage = requestBody.stage;
 
       const responseBody = {
         systemPrompt: getStage(newStage)?.systemPrompt,
@@ -152,8 +161,6 @@ const toolsRegistry: Record<string, Tool> = {
   getWeather: {
     modelToolName: "getWeather",
     description: "Get the weather for a given location",
-    instructions:
-      "Use this tool to check the current weather for any location the user asks about.",
     dynamicParameters: [
       {
         name: "location",
@@ -199,6 +206,10 @@ export const getSelectedToolsConfig = (toolNames: string[]) => {
           modelToolName: tool.modelToolName,
           description: tool.description,
           dynamicParameters: tool.dynamicParameters || [],
+          http: {
+            baseUrlPattern: `${BASE_URL}/tools/${toolName}`,
+            httpMethod: "POST",
+          },
         },
       };
     })
@@ -213,36 +224,33 @@ export const getCallConfigForStage = (stageName: string) => {
   // Get the tools for this stage
   const stageTools = stage.tools || [];
   const toolsToInclude = ["changeStage", ...stageTools];
+  const selectedTools = getSelectedToolsConfig(toolsToInclude);
 
   // Create tool instructions section for the system prompt
-  const toolInstructions = toolsToInclude
+  const toolInstructions = `
+  You have access to the following tools:\n
+  ${toolsToInclude
     .map((toolName) => {
       const tool = toolsRegistry[toolName];
       if (!tool) return null;
-      return tool.instructions;
+      return `- ${toolName}`;
     })
     .filter(Boolean)
-    .join("\n\n");
+    .join("\n")}
+
+  You can use these tools to help you with the conversation.
+  `;
 
   // Combine stage system prompt with tool instructions
-  const systemPrompt = `${stage.systemPrompt}
-  
-${toolInstructions}`;
+  const systemPrompt = `${COMMON_SYSTEM_PROMPT}\n${stage.systemPrompt}\n${toolInstructions}`;
 
-  return {
+  const callConfig = {
     ...BASE_CALL_CONFIG,
     systemPrompt,
-    selectedTools: [
-      // Always include the changeStage tool
-      {
-        temporaryTool: {
-          modelToolName: toolsRegistry.changeStage.modelToolName,
-          description: toolsRegistry.changeStage.description,
-          dynamicParameters: toolsRegistry.changeStage.dynamicParameters || [],
-        },
-      },
-      // Add any stage-specific tools
-      ...getSelectedToolsConfig(stageTools),
-    ],
+    selectedTools,
   };
+
+  console.log(JSON.stringify(callConfig, null, 2));
+
+  return callConfig;
 };
