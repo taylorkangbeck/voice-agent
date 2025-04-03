@@ -1,0 +1,19 @@
+{
+  "name": "voice-agent",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "tunnel": "ngrok http --domain=ladybird-winning-shiner.ngrok-free.app http://localhost:3000"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "dotenv-cli": "^7.4.1"
+  }
+}
