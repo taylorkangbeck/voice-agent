@@ -21,6 +21,6 @@ export async function embedText(text: string, taskType: TaskType) {
       taskType: taskType,
     },
   });
-
+  console.log("response", response);
   return response.embeddings;
 }
