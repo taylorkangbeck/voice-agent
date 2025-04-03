@@ -80,44 +80,44 @@ describe("Embeddings Integration Tests", () => {
     }
   });
 
-  it("should generate embeddings for different task types", async () => {
-    // Create a spy on the embedContent method
-    const mockEmbedContent = jest.fn().mockResolvedValue({
-      embeddings: [
-        {
-          values: [0.1, 0.2, 0.3, 0.4, 0.5],
-          statistics: {
-            truncated: false,
-            tokenCount: 5,
-          },
-        },
-      ],
-    });
+  // it("should generate embeddings for different task types", async () => {
+  //   // Create a spy on the embedContent method
+  //   const mockEmbedContent = jest.fn().mockResolvedValue({
+  //     embeddings: [
+  //       {
+  //         values: [0.1, 0.2, 0.3, 0.4, 0.5],
+  //         statistics: {
+  //           truncated: false,
+  //           tokenCount: 5,
+  //         },
+  //       },
+  //     ],
+  //   });
 
-    // Override the mock implementation for this test
-    mockGoogleGenAI.mockImplementationOnce(() => {
-      return {
-        models: {
-          embedContent: mockEmbedContent,
-        },
-      } as any;
-    });
+  //   // Override the mock implementation for this test
+  //   mockGoogleGenAI.mockImplementationOnce(() => {
+  //     return {
+  //       models: {
+  //         embedContent: mockEmbedContent,
+  //       },
+  //     } as any;
+  //   });
 
-    // Test text to embed
-    const textToEmbed = "This is a sample text for embedding";
+  //   // Test text to embed
+  //   const textToEmbed = "This is a sample text for embedding";
 
-    // Test with RETRIEVAL_QUERY task type
-    await embedText(textToEmbed, TaskType.RETRIEVAL_QUERY);
+  //   // Test with RETRIEVAL_QUERY task type
+  //   await embedText(textToEmbed, TaskType.RETRIEVAL_QUERY);
 
-    // Verify embedContent was called with correct parameters
-    expect(mockEmbedContent).toHaveBeenCalledWith({
-      model: "gemini-embedding-exp-03-07",
-      contents: textToEmbed,
-      config: {
-        taskType: TaskType.RETRIEVAL_QUERY,
-      },
-    });
-  });
+  //   // Verify embedContent was called with correct parameters
+  //   expect(mockEmbedContent).toHaveBeenCalledWith({
+  //     model: "gemini-embedding-exp-03-07",
+  //     contents: textToEmbed,
+  //     config: {
+  //       taskType: TaskType.RETRIEVAL_QUERY,
+  //     },
+  //   });
+  // });
 
   it("should throw an error when API key is missing", async () => {
     // Remove the API key

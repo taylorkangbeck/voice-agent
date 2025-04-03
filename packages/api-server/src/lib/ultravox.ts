@@ -32,7 +32,7 @@ const STAGES: StageMap = {
     systemPrompt: `
     The phone call just started. Find out how to help the caller.
 `,
-    tools: ["getWeather"],
+    tools: ["getWeather", "getNearestCity"],
   },
   Closing: {
     name: "Closing",
@@ -173,9 +173,38 @@ const toolsRegistry: Record<string, Tool> = {
       },
     ],
     execute: (requestBody: any) => {
+      if (requestBody.location === "New York") {
+        return {
+          body: {
+            weather: "sunny with a purple sky",
+          },
+        };
+      }
       return {
         body: {
-          weather: "sunny with a purple sky",
+          weather: "cloudy with a blue sky",
+        },
+      };
+    },
+  },
+  getNearestCity: {
+    modelToolName: "getNearestCity",
+    description: "Get the nearest city to a given location",
+    dynamicParameters: [
+      {
+        name: "location",
+        location: "PARAMETER_LOCATION_BODY",
+        schema: {
+          description: "The location to get the nearest city to",
+          type: "string",
+        },
+        required: true,
+      },
+    ],
+    execute: (requestBody: any) => {
+      return {
+        body: {
+          nearestCity: "New York",
         },
       };
     },

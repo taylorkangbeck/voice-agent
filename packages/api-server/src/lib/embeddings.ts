@@ -15,10 +15,13 @@ export async function embedText(text: string, taskType: TaskType) {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
   const response = await ai.models.embedContent({
-    model: "gemini-embedding-exp-03-07",
+    // model: "gemini-embedding-exp-03-07",
+    // model: "text-embedding-large-exp-03-07",
+    model: "text-embedding-005",
     contents: text,
     config: {
       taskType: taskType,
+      outputDimensionality: 768,
     },
   });
   console.log("response", response);
