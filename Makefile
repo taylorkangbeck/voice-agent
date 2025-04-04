@@ -1,11 +1,20 @@
 # Dev commands
 
 tunnel:
-	ngrok http --domain=ladybird-winning-shiner.ngrok-free.app http://localhost:3000	
+	dotenvx run -- npm run tunnel
 
 dev:start
-	cd ./packages/api-server && dotenvx run -f ../../.env -- npm run dev
-	
+	dotenvx run -- npm run dev
+
+test:
+	dotenvx run -- npm run test
+
+studio:
+	dotenvx run -- npx @langchain/langgraph-cli@0.0.14 dev
+
+init-db:
+	dotenvx run -- npm run init-all
+
 build: ## Build docker image
 	dotenvx run -- docker compose build
 

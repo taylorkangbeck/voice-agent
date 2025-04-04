@@ -1,0 +1,7 @@
+{
+  "node_version": "20",
+  "graphs": {
+    "tasker": "./src/lib/langgraph/executor/graph.ts:graph"
+  },
+  "env": ".env"
+}

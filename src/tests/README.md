@@ -13,7 +13,7 @@ The tests verify that all NotionActions work correctly by:
 
 ## Test Structure
 
-- `notion.integration.test.ts`: Tests for all NotionActions
+- `notion.test.ts`: Tests for all NotionActions
 
 The tests are organized by action type:
 

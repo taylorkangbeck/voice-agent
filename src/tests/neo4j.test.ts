@@ -80,6 +80,8 @@ describe("Neo4j ActionNode Operations", () => {
     const createResult = await createActionNode({
       name: testActionName,
       description: testDescription,
+      inputSchema: {},
+      outputSchema: {},
     });
 
     // Verify the node was created successfully

@@ -1,7 +1,8 @@
 import bodyParser from "body-parser";
 import express from "express";
 import twilio from "twilio";
-import { createUltravoxCall } from "./lib/ultravox";
+import { createUltravoxCall } from "./lib/ultravox/agent.js";
+import { getToolByName } from "./lib/ultravox/tools";
 
 const app = express();
 const port = 3000;
@@ -13,8 +14,7 @@ app.use(bodyParser.json());
 app.post("/incoming", async (req, res) => {
   try {
     console.log("Incoming call received");
-    // Start with the Introduction stage
-    const response = await createUltravoxCall("Introduction");
+    const response = await createUltravoxCall();
     const twiml = new twilio.twiml.VoiceResponse();
     const connect = twiml.connect();
     connect.stream({
@@ -34,17 +34,42 @@ app.post("/incoming", async (req, res) => {
   }
 });
 
-// Tools handler
+// // New endpoint for langgraph agent
+// app.post("/langgraph", async (req, res) => {
+//   try {
+//     const { task } = req.body;
+
+//     if (!task || typeof task !== "string") {
+//       return res.status(400).json({
+//         error: "A 'task' parameter is required in the request body",
+//       });
+//     }
+
+//     console.log(`Executing langgraph agent for task: ${task}`);
+
+//     const result = await runLanggraphAgent(task);
+
+//     res.status(200).json({
+//       task,
+//       result,
+//     });
+//   } catch (error) {
+//     console.error("Error executing langgraph agent:", error);
+//     res.status(500).json({
+//       error: "Error executing langgraph agent",
+//       message: error instanceof Error ? error.message : String(error),
+//     });
+//   }
+// });
+
+// Flows handler
 app.post("/tools/:toolName", async (req, res) => {
   try {
     const { toolName } = req.params;
     console.log(`Tool request received for: ${toolName}`);
 
-    // Import the tools dynamically from ultravox.ts
-    const { getToolByName } = await import("./lib/ultravox");
-
     // Look up the tool with the matching name
-    const tool = getToolByName(toolName);
+    const tool = await getToolByName(toolName);
 
     if (!tool) {
       console.error(`Tool not found: ${toolName}`);
@@ -54,7 +79,29 @@ app.post("/tools/:toolName", async (req, res) => {
     }
 
     // Call the tool with the request body
-    const result = await tool(req.body);
+    console.log("Tool request body:\n", JSON.stringify(req.body, null, 2));
+
+    // Parse any JSON string values in the request body
+    const parsedBody = Object.entries(req.body).reduce((acc, [key, value]) => {
+      if (
+        typeof value === "string" &&
+        (value.startsWith("{") || value.startsWith("["))
+      ) {
+        try {
+          acc[key] = JSON.parse(value);
+        } catch (e) {
+          // If parsing fails, keep the original string
+          acc[key] = value;
+        }
+      } else {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as Record<string, any>);
+
+    const result = await tool(parsedBody);
+
+    console.log("Tool call result:\n", JSON.stringify(result, null, 2));
 
     // Send the response
     if (result.headers) {

@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 
-enum TaskType {
+export enum TaskType {
   SEMANTIC_SIMILARITY = "SEMANTIC_SIMILARITY",
   CLASSIFICATION = "CLASSIFICATION",
   CLUSTERING = "CLUSTERING",
