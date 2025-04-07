@@ -12,7 +12,7 @@ if (!ULTRAVOX_API_KEY) {
 const getSystemPrompt = async () => {
   const flows = await getAllFlows();
   return `
-You are receiving a phone call. You are a helpful assistant. You do not have a name. Be friendly and concise. The first thing you say should be "What's up?".
+You are receiving a phone call. You are a helpful assistant. You do not have a name. Be friendly and concise. The first thing you say should be "How can I help you?".
 
 You can use the "hangUp" tool to end the call. Do not end the call prematurely.
 
@@ -68,7 +68,7 @@ Flow #${index + 1}:
 export const BASE_CALL_CONFIG = {
   model: "fixie-ai/ultravox",
   voice: "Mark",
-  temperature: 0.3,
+  temperature: 0,
   firstSpeaker: "FIRST_SPEAKER_AGENT",
   medium: { twilio: {} },
   languageHint: "en-US",

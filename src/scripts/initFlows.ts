@@ -25,7 +25,7 @@ async function main() {
     const updateStep = await createFlowStepNode({
       name: "NotionUpdatePageStatusStep",
       instructions:
-        "Update the page status to the provided status by passing it in the properties object. Valid statuses are 'Done', 'In progress', and 'Not started'.", // really there should be another step to get valid statuses
+        "Update the page status to the provided status by passing it in the properties object. Valid statuses are 'On Hold', 'In Progress', 'Completed', and 'Not Started'.", // really there should be another step to get valid statuses
     });
     const updateStepId = updateStep.records[0].get("step").properties.id;
     console.log(`Update step created with ID: ${updateStepId}`);
