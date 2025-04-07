@@ -1,9 +1,9 @@
 curl --request POST \
   --url https://api.ultravox.ai/api/tools \
   --header 'Content-Type: application/json' \
-  --header 'X-API-Key: wg3KyrrW.gmiOn8qyRaMq0urHwoJ2WJpB80hscCfj' \
+  --header 'X-API-Key: $ULTRAVOX_API_KEY' \
   --data '{
-  "name": "executeFlow2",
+  "name": "executeFlow",
   "definition": {
     "modelToolName": "executeFlow",
     "description": "Execute a flow",
