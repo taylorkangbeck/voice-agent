@@ -17,7 +17,10 @@ export const AgentConfigurationAnnotation = Annotation.Root({
    * The language model used for processing and refining queries.
    * Should be in the form: provider/model-name.
    */
-  // queryModel: Annotation<string>,
+  queryModel: Annotation<string>,
+
+  // For thinking and reasoning
+  reasoningModel: Annotation<string>,
 
   /**
    * The language model used for generating responses.
@@ -46,9 +49,9 @@ export function ensureAgentConfiguration(
   return {
     embeddingModel:
       configurable.embeddingModel || "openai/text-embedding-3-small",
-    // queryModel: configurable.queryModel || "anthropic/claude-3-haiku-20240307",
-    responseModel:
-      configurable.responseModel || "anthropic/claude-3-5-sonnet-20240620",
+    queryModel: configurable.queryModel || "claude-3-5-haiku-latest",
+    reasoningModel: configurable.reasoningModel || "claude-3-7-sonnet-latest",
+    responseModel: configurable.responseModel || "claude-3-7-sonnet-latest",
     resultsSystemPrompt:
       configurable.resultsSystemPrompt || RESULTS_SYSTEM_PROMPT,
   };

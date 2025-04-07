@@ -10,10 +10,13 @@ test:
 	dotenvx run -- npm run test
 
 studio:
-	dotenvx run -- npx @langchain/langgraph-cli@0.0.14 dev
+	dotenvx run -- npx @langchain/langgraph-cli dev
 
-init-db:
+init-db:reset-db
 	dotenvx run -- npm run init-all
+
+reset-db:
+	dotenvx run -- npm run reset-db
 
 build: ## Build docker image
 	dotenvx run -- docker compose build

@@ -1,5 +1,5 @@
 import { Annotation, MessagesAnnotation } from "@langchain/langgraph";
-import { Flow, FlowExecution } from "./types.js";
+import { Flow, FlowExecution } from "../../../types.js";
 
 /**
  * Represents the input state for the agent.
@@ -22,6 +22,8 @@ export const InputStateAnnotation = Annotation.Root({
    *    (... repeat steps 2-5 as needed ...)
    */
   ...MessagesAnnotation.spec,
+
+  flowId: Annotation<string>,
 });
 
 /**
@@ -34,6 +36,18 @@ export const AgentStateAnnotation = Annotation.Root({
   flowExecution: Annotation<FlowExecution>,
   currentStep: Annotation<number>,
 
-  // Additional attributes can be added here as needed
-  // Examples might include retrieved documents, extracted entities, API connections, etc.
+  // Routing and validation state
+  needsMoreInfo: Annotation<boolean>,
+
+  // Step execution state
+  lastStepSuccess: Annotation<boolean>,
+  lastStepOutput: Annotation<any>,
+  lastStepError: Annotation<string>,
+
+  // Evaluation state
+  outputEvaluation: Annotation<string>,
+  isOutputValid: Annotation<boolean>,
+  failed: Annotation<boolean>,
+  failedReason: Annotation<string>,
+  completed: Annotation<boolean>,
 });

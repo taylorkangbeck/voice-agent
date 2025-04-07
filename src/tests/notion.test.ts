@@ -131,15 +131,15 @@ describe("Notion Actions", () => {
   it("should export all notion actions", () => {
     const actionNames = listNotionActions();
     expect(actionNames.length).toBeGreaterThan(0);
-    expect(actionNames).toContain("retrieveBlock");
-    expect(actionNames).toContain("queryDatabase");
-    expect(actionNames).toContain("search");
+    expect(actionNames).toContain("NotionRetrieveBlock");
+    expect(actionNames).toContain("NotionQueryDatabase");
+    expect(actionNames).toContain("NotionSearch");
   });
 
   it("should get a notion action by name", () => {
-    const action = getNotionAction("retrieveBlock");
+    const action = getNotionAction("NotionRetrieveBlock");
     expect(action).toBeDefined();
-    expect(action?.name).toBe("RetrieveBlock");
+    expect(action?.name).toBe("NotionRetrieveBlock");
   });
 
   it("should return undefined for non-existent action", () => {
@@ -150,11 +150,13 @@ describe("Notion Actions", () => {
   // Block Actions Tests
   describe("Block Actions", () => {
     it("should retrieve a block", async () => {
-      await testNotionAction("retrieveBlock", { block_id: "mock-block-id" });
+      await testNotionAction("NotionRetrieveBlock", {
+        block_id: "mock-block-id",
+      });
     });
 
     it("should update a block", async () => {
-      await testNotionAction("updateBlock", {
+      await testNotionAction("NotionUpdateBlock", {
         block_id: "mock-block-id",
         paragraph: {
           text: [{ type: "text", text: { content: "Updated text" } }],
@@ -163,11 +165,13 @@ describe("Notion Actions", () => {
     });
 
     it("should delete a block", async () => {
-      await testNotionAction("deleteBlock", { block_id: "mock-block-id" });
+      await testNotionAction("NotionDeleteBlock", {
+        block_id: "mock-block-id",
+      });
     });
 
     it("should append block children", async () => {
-      await testNotionAction("appendBlockChildren", {
+      await testNotionAction("NotionAppendBlockChildren", {
         block_id: "mock-block-id",
         children: [
           {
@@ -180,7 +184,7 @@ describe("Notion Actions", () => {
     });
 
     it("should list block children", async () => {
-      await testNotionAction("listBlockChildren", {
+      await testNotionAction("NotionListBlockChildren", {
         block_id: "mock-block-id",
       });
     });
@@ -189,24 +193,24 @@ describe("Notion Actions", () => {
   // Database Actions Tests
   describe("Database Actions", () => {
     it("should list databases", async () => {
-      await testNotionAction("listDatabases", {});
+      await testNotionAction("NotionListDatabases", {});
     });
 
     it("should retrieve a database", async () => {
-      await testNotionAction("retrieveDatabase", {
+      await testNotionAction("NotionRetrieveDatabase", {
         database_id: "mock-database-id",
       });
     });
 
     it("should query a database", async () => {
-      await testNotionAction("queryDatabase", {
+      await testNotionAction("NotionQueryDatabase", {
         database_id: "mock-database-id",
         filter: { property: "Name", text: { contains: "Test" } },
       });
     });
 
     it("should create a database", async () => {
-      await testNotionAction("createDatabase", {
+      await testNotionAction("NotionCreateDatabase", {
         parent: { page_id: "mock-page-id" },
         title: [{ type: "text", text: { content: "New Database" } }],
         properties: {
@@ -219,7 +223,7 @@ describe("Notion Actions", () => {
     });
 
     it("should update a database", async () => {
-      await testNotionAction("updateDatabase", {
+      await testNotionAction("NotionUpdateDatabase", {
         database_id: "mock-database-id",
         title: [{ type: "text", text: { content: "Updated Database" } }],
       });
@@ -229,7 +233,7 @@ describe("Notion Actions", () => {
   // Page Actions Tests
   describe("Page Actions", () => {
     it("should create a page", async () => {
-      await testNotionAction("createPage", {
+      await testNotionAction("NotionCreatePage", {
         parent: { database_id: "mock-database-id" },
         properties: {
           Name: { title: [{ text: { content: "New Page" } }] },
@@ -239,11 +243,11 @@ describe("Notion Actions", () => {
     });
 
     it("should retrieve a page", async () => {
-      await testNotionAction("retrievePage", { page_id: "mock-page-id" });
+      await testNotionAction("NotionRetrievePage", { page_id: "mock-page-id" });
     });
 
     it("should update a page", async () => {
-      await testNotionAction("updatePage", {
+      await testNotionAction("NotionUpdatePage", {
         page_id: "mock-page-id",
         properties: {
           Name: { title: [{ text: { content: "Updated Page" } }] },
@@ -253,7 +257,7 @@ describe("Notion Actions", () => {
     });
 
     it("should retrieve a page property", async () => {
-      await testNotionAction("retrievePageProperty", {
+      await testNotionAction("NotionRetrievePageProperty", {
         page_id: "mock-page-id",
         property_id: "mock-property-id",
       });
@@ -263,43 +267,45 @@ describe("Notion Actions", () => {
   // User Actions Tests
   describe("User Actions", () => {
     it("should retrieve a user", async () => {
-      await testNotionAction("retrieveUser", { user_id: "mock-user-id" });
+      await testNotionAction("NotionRetrieveUser", { user_id: "mock-user-id" });
     });
 
     it("should list users", async () => {
-      await testNotionAction("listUsers", {});
+      await testNotionAction("NotionListUsers", {});
     });
 
     it("should retrieve the current user", async () => {
-      await testNotionAction("retrieveCurrentUser", {});
+      await testNotionAction("NotionRetrieveCurrentUser", {});
     });
   });
 
   // Comment Actions Tests
   describe("Comment Actions", () => {
     it("should create a comment", async () => {
-      await testNotionAction("createComment", {
+      await testNotionAction("NotionCreateComment", {
         parent: { page_id: "mock-page-id" },
         rich_text: [{ type: "text", text: { content: "New comment" } }],
       });
     });
 
     it("should list comments", async () => {
-      await testNotionAction("listComments", { block_id: "mock-block-id" });
+      await testNotionAction("NotionListComments", {
+        block_id: "mock-block-id",
+      });
     });
   });
 
   // Search Action Test
   describe("Search Action", () => {
     it("should search for content", async () => {
-      await testNotionAction("search", { query: "test" });
+      await testNotionAction("NotionSearch", { query: "test" });
     });
   });
 
   // OAuth Actions Tests
   describe("OAuth Actions", () => {
     it("should get an OAuth token", async () => {
-      await testNotionAction("oauthToken", {
+      await testNotionAction("NotionOauthToken", {
         grant_type: "authorization_code",
         code: "mock-code",
         redirect_uri: "https://example.com/callback",
@@ -309,7 +315,7 @@ describe("Notion Actions", () => {
     });
 
     it("should introspect an OAuth token", async () => {
-      await testNotionAction("oauthIntrospect", {
+      await testNotionAction("NotionOauthIntrospect", {
         token: "mock-token",
         client_id: "mock-client-id",
         client_secret: "mock-client-secret",
@@ -317,7 +323,7 @@ describe("Notion Actions", () => {
     });
 
     it("should revoke an OAuth token", async () => {
-      await testNotionAction("oauthRevoke", {
+      await testNotionAction("NotionOauthRevoke", {
         token: "mock-token",
         client_id: "mock-client-id",
         client_secret: "mock-client-secret",
@@ -333,7 +339,7 @@ describe("Notion Actions", () => {
       console.error = jest.fn();
 
       // Create a mock implementation for the execute method that throws an error
-      const action = getNotionAction("retrieveBlock");
+      const action = getNotionAction("NotionRetrieveBlock");
       expect(action).toBeDefined();
 
       if (action) {

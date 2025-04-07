@@ -24,22 +24,15 @@ import type {
   UpdateDatabaseParameters,
   UpdatePageParameters,
 } from "@notionhq/client/build/src/api-endpoints";
+import { Action } from "../types";
 
 // Initializing a client
 const notion = new Client({
   auth: process.env.NOTION_TOKEN,
 });
 
-type NotionAction<TInput, TOutput> = {
-  name: string;
-  description: string;
-  inputSchema: Record<string, any>;
-  outputSchema: Record<string, any>;
-  execute: (input: TInput) => Promise<TOutput>;
-};
-
 type NotionActionMap = {
-  [key: string]: NotionAction<any, any>;
+  [key: string]: Action;
 };
 
 // TODO might need to make key and names same case
@@ -47,8 +40,8 @@ type NotionActionMap = {
 // Create a record of all available Notion actions
 const notionActions: NotionActionMap = {
   // Block actions
-  retrieveBlock: {
-    name: "RetrieveBlock",
+  NotionRetrieveBlock: {
+    name: "NotionRetrieveBlock",
     description: "Retrieves a Block object using the ID specified.",
     inputSchema: {
       type: "object",
@@ -81,8 +74,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  updateBlock: {
-    name: "UpdateBlock",
+  NotionUpdateBlock: {
+    name: "NotionUpdateBlock",
     description: "Updates the content of the block specified by ID.",
     inputSchema: {
       type: "object",
@@ -119,8 +112,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  deleteBlock: {
-    name: "DeleteBlock",
+  NotionDeleteBlock: {
+    name: "NotionDeleteBlock",
     description: "Sets a block to archived: true using the ID specified.",
     inputSchema: {
       type: "object",
@@ -151,8 +144,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  appendBlockChildren: {
-    name: "AppendBlockChildren",
+  NotionAppendBlockChildren: {
+    name: "NotionAppendBlockChildren",
     description:
       "Creates and appends new children blocks to the parent block specified by ID.",
     inputSchema: {
@@ -194,8 +187,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  listBlockChildren: {
-    name: "ListBlockChildren",
+  NotionListBlockChildren: {
+    name: "NotionListBlockChildren",
     description:
       "Returns a paginated array of child block objects for the block specified by ID.",
     inputSchema: {
@@ -241,8 +234,8 @@ const notionActions: NotionActionMap = {
   },
 
   // Database actions
-  listDatabases: {
-    name: "ListDatabases",
+  NotionListDatabases: {
+    name: "NotionListDatabases",
     description:
       "Returns a paginated list of databases that the integration has access to.",
     inputSchema: {
@@ -282,8 +275,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  retrieveDatabase: {
-    name: "RetrieveDatabase",
+  NotionRetrieveDatabase: {
+    name: "NotionRetrieveDatabase",
     description: "Retrieves a Database object using the ID specified.",
     inputSchema: {
       type: "object",
@@ -319,8 +312,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  queryDatabase: {
-    name: "QueryDatabase",
+  NotionQueryDatabase: {
+    name: "NotionQueryDatabase",
     description:
       "Gets a list of Pages from a database with provided filter and sort options.",
     inputSchema: {
@@ -372,8 +365,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  createDatabase: {
-    name: "CreateDatabase",
+  NotionCreateDatabase: {
+    name: "NotionCreateDatabase",
     description:
       "Creates a database as a child of the specified parent page, with the specified properties schema.",
     inputSchema: {
@@ -419,8 +412,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  updateDatabase: {
-    name: "UpdateDatabase",
+  NotionUpdateDatabase: {
+    name: "NotionUpdateDatabase",
     description:
       "Updates an existing database as specified by the ID, allowing title and properties schema changes.",
     inputSchema: {
@@ -467,8 +460,8 @@ const notionActions: NotionActionMap = {
   },
 
   // Page actions
-  createPage: {
-    name: "CreatePage",
+  NotionCreatePage: {
+    name: "NotionCreatePage",
     description: "Creates a new page in the specified parent page or database.",
     inputSchema: {
       type: "object",
@@ -510,8 +503,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  retrievePage: {
-    name: "RetrievePage",
+  NotionRetrievePage: {
+    name: "NotionRetrievePage",
     description: "Retrieves a Page object using the ID specified.",
     inputSchema: {
       type: "object",
@@ -544,8 +537,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  updatePage: {
-    name: "UpdatePage",
+  NotionUpdatePage: {
+    name: "NotionUpdatePage",
     description: "Updates page property values for the specified page.",
     inputSchema: {
       type: "object",
@@ -586,8 +579,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  retrievePageProperty: {
-    name: "RetrievePageProperty",
+  NotionRetrievePageProperty: {
+    name: "NotionRetrievePageProperty",
     description:
       "Retrieves a page property item for the specified page and property.",
     inputSchema: {
@@ -627,8 +620,8 @@ const notionActions: NotionActionMap = {
   },
 
   // User actions
-  retrieveUser: {
-    name: "RetrieveUser",
+  NotionRetrieveUser: {
+    name: "NotionRetrieveUser",
     description: "Retrieves a User object using the ID specified.",
     inputSchema: {
       type: "object",
@@ -660,8 +653,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  listUsers: {
-    name: "ListUsers",
+  NotionListUsers: {
+    name: "NotionListUsers",
     description: "Returns a paginated list of Users for the workspace.",
     inputSchema: {
       type: "object",
@@ -698,8 +691,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  retrieveCurrentUser: {
-    name: "RetrieveCurrentUser",
+  NotionRetrieveCurrentUser: {
+    name: "NotionRetrieveCurrentUser",
     description: "Retrieves the bot User associated with the API token.",
     inputSchema: {
       type: "object",
@@ -726,8 +719,8 @@ const notionActions: NotionActionMap = {
   },
 
   // Comment actions
-  createComment: {
-    name: "CreateComment",
+  NotionCreateComment: {
+    name: "NotionCreateComment",
     description:
       "Creates a comment in a discussion within a page or as a standalone comment.",
     inputSchema: {
@@ -773,8 +766,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  listComments: {
-    name: "ListComments",
+  NotionListComments: {
+    name: "NotionListComments",
     description:
       "Returns a paginated list of comments for the specified block.",
     inputSchema: {
@@ -817,8 +810,8 @@ const notionActions: NotionActionMap = {
   },
 
   // Search action
-  search: {
-    name: "Search",
+  NotionSearch: {
+    name: "NotionSearch",
     description:
       "Searches all pages and databases that the integration has access to.",
     inputSchema: {
@@ -869,8 +862,8 @@ const notionActions: NotionActionMap = {
   },
 
   // OAuth actions
-  oauthToken: {
-    name: "OAuthToken",
+  NotionOauthToken: {
+    name: "NotionOAuthToken",
     description:
       "Exchanges the authorization code for an access token and bot ID.",
     inputSchema: {
@@ -929,8 +922,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  oauthIntrospect: {
-    name: "OAuthIntrospect",
+  NotionOauthIntrospect: {
+    name: "NotionOAuthIntrospect",
     description:
       "Check if the token is valid and retrieve basic information about the token.",
     inputSchema: {
@@ -973,8 +966,8 @@ const notionActions: NotionActionMap = {
     },
   },
 
-  oauthRevoke: {
-    name: "OAuthRevoke",
+  NotionOauthRevoke: {
+    name: "NotionOAuthRevoke",
     description: "Revokes an access token.",
     inputSchema: {
       type: "object",
@@ -1015,9 +1008,7 @@ const notionActions: NotionActionMap = {
 };
 
 // Function to get a NotionAction by name
-export const getNotionAction = (
-  actionName: string
-): NotionAction<any, any> | undefined => {
+export const getNotionAction = (actionName: string): Action | undefined => {
   return notionActions[actionName];
 };
 

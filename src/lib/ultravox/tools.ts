@@ -1,4 +1,5 @@
-import { executeCypherQuery } from "../neo4j";
+import { getAgentForFlow } from "../langgraph/executor/graph";
+import { executeCypherQuery, getFlowNodeById } from "../neo4j";
 
 const BASE_DOMAIN = process.env.BASE_DOMAIN;
 
@@ -33,27 +34,33 @@ export interface Tool {
   }>;
 }
 
-// Function to get a tool by name
-export const getToolByName = async (
-  toolName: string
-): Promise<ToolFunction | undefined> => {
+export const executeFlowById = async (
+  flowNodeId: string,
+  requestMessage: string
+) => {
   // Convert the array from getFlowTools() into a proper Record<string, Tool>
-  const flowTools = await getFlowTools();
-  const allTools: Record<string, Tool> = {};
+  const flow = await getFlowNodeById(flowNodeId);
 
-  // Add each flow tool to the tools record
-  for (const tool of flowTools) {
-    if (tool.temporaryTool && tool.temporaryTool.modelToolName) {
-      allTools[tool.temporaryTool.modelToolName] = {
-        modelToolName: tool.temporaryTool.modelToolName,
-        description: tool.temporaryTool.description,
-        dynamicParameters: tool.temporaryTool.dynamicParameters,
-        execute: async () => ({ body: {} }), // Default implementation
-      };
-    }
+  if (!flow) {
+    throw new Error(`Flow with id ${flowNodeId} not found`);
   }
-  const tool = allTools[toolName];
-  return tool ? tool.execute : undefined;
+
+  const flowAgent = await getAgentForFlow(flowNodeId);
+  const result = await flowAgent.invoke({
+    messages: [
+      {
+        role: "user",
+        content: requestMessage,
+      },
+    ],
+  });
+
+  console.log("Flow agent messages:\n", result.messages);
+
+  return result.messages
+    .filter((message) => message.getType() === "ai")
+    .map((message) => message.content)
+    .join("\n");
 };
 
 export async function getFlowTools() {
@@ -76,22 +83,31 @@ export async function getFlowTools() {
         temporaryTool: {
           modelToolName: flow.name,
           // location: "PARAMETER_LOCATION_BODY",
-          description: flow.description || `${flow.name}`,
+          description: flow.description || `No description provided.`,
           dynamicParameters: [
-            ...(flow.inputSchema
-              ? Object.entries(flow.inputSchema.properties || {}).map(
-                  ([name, schema]) => ({
-                    name,
-                    location: "PARAMETER_LOCATION_BODY",
-                    schema: schema as Record<string, any>,
-                    required:
-                      flow.inputSchema.required?.includes(name) || false,
-                  })
-                )
-              : []),
+            {
+              name: "requestMessage",
+              location: "PARAMETER_LOCATION_BODY",
+              schema: {
+                type: "string",
+                description: "The message to send to the flow execution agent",
+              },
+              required: true,
+            },
+            // ...(flow.inputSchema
+            //   ? Object.entries(flow.inputSchema.properties || {}).map(
+            //       ([name, schema]) => ({
+            //         name,
+            //         location: "PARAMETER_LOCATION_BODY",
+            //         schema: schema as Record<string, any>,
+            //         required:
+            //           flow.inputSchema.required?.includes(name) || false,
+            //       })
+            //     )
+            //   : []),
           ],
           http: {
-            baseUrlPattern: `https://${BASE_DOMAIN}/tools/${flow.id}`,
+            baseUrlPattern: `https://${BASE_DOMAIN}/flows/${flow.id}`,
             httpMethod: "POST",
           },
         },

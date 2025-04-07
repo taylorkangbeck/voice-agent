@@ -14,7 +14,7 @@ async function main() {
     // Create the flow steps
     console.log("Creating search step...");
     const searchStep = await createFlowStepNode({
-      name: "search-step",
+      name: "NotionSearchForPageStep",
       instructions:
         "For a task, the page name is under result.properties?.['Task name']?.title?.[0]?.plain_text",
     });
@@ -23,16 +23,17 @@ async function main() {
 
     console.log("Creating update page step...");
     const updateStep = await createFlowStepNode({
-      name: "update-step",
-      instructions: "Update the page status to the given status",
+      name: "NotionUpdatePageStatusStep",
+      instructions:
+        "Update the page status to the provided status by passing it in the properties object. Valid statuses are 'Done', 'In progress', and 'Not started'.", // really there should be another step to get valid statuses
     });
     const updateStepId = updateStep.records[0].get("step").properties.id;
     console.log(`Update step created with ID: ${updateStepId}`);
 
     // Get the ID for the Search action node
-    const searchAction = await getActionNodeByName("Search");
+    const searchAction = await getActionNodeByName("NotionSearch");
     if (!searchAction) {
-      throw new Error("Search action not found");
+      throw new Error("NotionSearch action not found");
     }
     const searchActionId = searchAction.id;
 
@@ -41,13 +42,13 @@ async function main() {
     await setFlowStepAction(searchStepId, searchActionId);
 
     // Get the ID for the UpdatePage action node
-    const updateAction = await getActionNodeByName("UpdatePage");
+    const updateAction = await getActionNodeByName("NotionUpdatePage");
     if (!updateAction) {
-      throw new Error("UpdatePage action not found");
+      throw new Error("NotionUpdatePage action not found");
     }
     const updateActionId = updateAction.id;
 
-    console.log("Setting UpdatePage action for update step...");
+    console.log("Setting NotionUpdatePage action for update step...");
     await setFlowStepAction(updateStepId, updateActionId);
 
     // Create the NEXT edge from search to update
@@ -57,12 +58,13 @@ async function main() {
     // Create the Flow node
     console.log("Creating flow node...");
     const result = await createFlowNode({
-      name: "SearchAndUpdate",
-      description: "A flow that searches for a page and then updates it",
+      name: "NotionFindPageAndUpdateStatus",
+      description: "Searches for a Notion page and then updates its status",
       inputSchema: {
         type: "object",
         properties: {
           pageName: { type: "string" },
+          status: { type: "string" },
         },
       },
     });

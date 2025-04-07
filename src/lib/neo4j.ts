@@ -1,8 +1,9 @@
 import { randomUUID } from "crypto";
 import neo4j from "neo4j-driver";
+import { getNotionAction } from "../actions/notion";
+import { Flow, FlowStep } from "../types";
 import { embedText, TaskType } from "./embeddings";
 
-// Node type definitions
 export type CreateActionNodeParams = {
   name: string;
   description: string;
@@ -879,4 +880,175 @@ export const deleteFlowStepById = async (id: string) => {
     `,
     { id }
   );
+};
+
+/**
+ * Get a complete Flow by ID, including all its FlowSteps in order by traversing START and NEXT edges
+ * @param id The ID of the Flow to retrieve
+ * @returns Complete Flow object with ordered steps, or null if not found
+ */
+export const getFlowById = async (id: string): Promise<Flow | null> => {
+  // First get the flow node
+  const flowNode = await getFlowNodeById(id);
+  if (!flowNode) {
+    return null;
+  }
+
+  // Find the starting step and all subsequent steps by traversing the relationships
+  const result = await executeCypherQuery(
+    `
+    MATCH (flow:Flow {id: $id})-[:START]->(firstStep:FlowStep)
+    WITH firstStep
+    MATCH path = (firstStep)-[:NEXT*0..]->(step:FlowStep)
+    OPTIONAL MATCH (step)-[:EXECUTES]->(action:Action)
+    RETURN step, action, length(path) AS position
+    ORDER BY position
+    `,
+    { id }
+  );
+
+  if (!result.records || result.records.length === 0) {
+    // Return flow with empty steps if no steps found
+    return {
+      ...flowNode,
+      steps: [],
+    };
+  }
+
+  // Transform step nodes into FlowStep objects with their associated actions
+  const steps = result.records.map((record) => {
+    const stepNode = record.get("step").properties;
+    const actionNode = record.get("action")?.properties;
+
+    // Parse action input and output schemas if they exist
+    let inputSchema;
+    let outputSchema;
+
+    if (actionNode) {
+      try {
+        inputSchema = actionNode.inputSchema
+          ? JSON.parse(actionNode.inputSchema)
+          : {};
+        outputSchema = actionNode.outputSchema
+          ? JSON.parse(actionNode.outputSchema)
+          : {};
+      } catch (error) {
+        console.error(
+          `Error parsing schemas for action in step ${stepNode.name}:`,
+          error
+        );
+        inputSchema = {};
+        outputSchema = {};
+      }
+    }
+
+    // Create the Action object from the actionNode
+    const action = actionNode
+      ? {
+          name: actionNode.name,
+          description: actionNode.description,
+          inputSchema,
+          outputSchema,
+          execute: async (input: any) => {
+            // This is a placeholder action that would need to be implemented
+            // based on how actions are actually executed in the application
+            console.log(
+              `Executing action ${actionNode.name} with input:`,
+              input
+            );
+            const action = getNotionAction(actionNode.name);
+            if (!action) {
+              throw new Error(`Action ${actionNode.name} not found`);
+            }
+
+            // Validate input against the action's inputSchema
+            if (action.inputSchema) {
+              // Basic validation - check required properties
+              const requiredProps = Object.entries(
+                action.inputSchema.properties || {}
+              )
+                .filter(
+                  ([_, propDef]: [string, any]) =>
+                    propDef.required ||
+                    (action.inputSchema.required &&
+                      action.inputSchema.required.includes(_))
+                )
+                .map(([propName]) => propName);
+
+              for (const prop of requiredProps) {
+                if (input[prop] === undefined) {
+                  throw new Error(
+                    `Missing required property '${prop}' for action ${actionNode.name}`
+                  );
+                }
+              }
+
+              // Type validation could be expanded here for more complex validation
+            }
+            const result = await action?.execute(input);
+            // console.log(`Result of action ${actionNode.name}:`, result);
+            return result;
+          },
+        }
+      : {
+          // Default placeholder action if no action is associated
+          name: "NoOpAction",
+          description: "Default placeholder action",
+          inputSchema: {},
+          outputSchema: {},
+          execute: async (input: any) => input,
+        };
+
+    // Create a step object with the proper action
+    const step: FlowStep<any, any> = {
+      id: stepNode.id,
+      name: stepNode.name,
+      instructions: stepNode.instructions,
+      action,
+    };
+
+    return step;
+  });
+
+  // Return the complete flow object
+  return {
+    ...flowNode,
+    steps,
+  };
+};
+
+/**
+ * Get all Flow nodes from the database with parsed properties
+ * @returns Array of Flow objects, or empty array if none found
+ */
+export const getAllFlows = async (): Promise<FlowNode[]> => {
+  const result = await executeCypherQuery(
+    `
+      MATCH (flow:Flow)
+      RETURN flow
+    `
+  );
+
+  if (!result.records || result.records.length === 0) {
+    return [];
+  }
+
+  return result.records.map((record) => {
+    const flow = { ...record.get("flow").properties };
+
+    // Parse the input schema
+    if (flow.inputSchema && typeof flow.inputSchema === "string") {
+      try {
+        flow.inputSchema = JSON.parse(flow.inputSchema);
+      } catch (error) {
+        console.error(
+          `Error parsing Flow inputSchema for ${flow.name}:`,
+          error
+        );
+        flow.inputSchema = {};
+      }
+    }
+
+    return flow as FlowNode;
+  });
 };
